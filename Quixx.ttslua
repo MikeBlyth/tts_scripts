@@ -626,6 +626,7 @@ function Board:restoreState()
     if self.lastMarker.obj then
         self.lastMarker.obj.setLock(false) -- since it's now the last, so free to be moved
     end
+    analyzeAndMark()
 end
 
 function Board:exitingMarker(obj)  -- if the object exiting zone is the last (and only unlocked) piece, then restore
@@ -890,6 +891,8 @@ function Board:calculateOK(rolls)
         end
       end
   end
+  if (self.markedThisTurn > 0) and (not self.usedWhiteFirst) then return end
+        -- if white dice were not used first, then no moves are available
   for row = 1, 4 do  -- mark the lock square as OK if row complete
       if (self.rowMax[row] == 11) and (locked[row]=='pending' or locked[row]==false) then
           self:setOK(row,12)  -- mark the lock square as OK if row complete
