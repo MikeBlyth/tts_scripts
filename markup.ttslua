@@ -1,0 +1,81 @@
+---- MARKUP MODULE for Writing on BOARDS
+Markup = {}
+Markup.allFigures = {}
+Markup.object = Global
+
+function Markup:new(targetObject)
+    local obj = {}
+    setmetatable(obj,self)
+    self.__index = self
+    obj.allFigures = {}
+    obj.object = targetObject or Global
+    return obj
+end
+
+function Markup:setObject(targetObject)
+    obj.object = targetObject or Global
+end
+
+function Markup:render(object)
+    local object = object or self.object or Global
+    --print(bbcodes.Green, dump(self.allFigures[#self.allFigures]))
+    object.setVectorLines(self.allFigures)
+end
+
+function Markup:draw(paramsIn)
+    local params
+    --local height = params.height or Global.tableHeight or 2
+    local paramsDefault = {
+        shape = 'Square',
+        size = 1,
+        scale = Vector(1,1,1),
+        thickness = 0.1,
+        rotation = Vector(0,0,0),
+        color = 'White',
+        pos = Vector(0,0,0),
+        offset = Vector(0,0,0),
+    }
+    if paramsIn then params = copyTable(paramsIn) else params = {} end
+    for k, v in pairs(paramsDefault) do  -- copy defaults to params
+        if params[k] == nil then params[k] = v end
+    end
+    --print('\n**params=', dump(params))
+    local generator = self.pointGenerators[params.shape]
+    points = generator(params)
+    --print('points=', dump(points))
+    for _, pts in pairs(points) do
+        table.insert(self.allFigures, {points=pts, color=params.color, thickness=params.thickness, rotation=params.rotation})
+    end
+end
+
+function Markup.squarePoints(params)
+--print('\nsquarePoints, params=', dump(params))
+    local center = Vector(params.pos) + Vector(params.offset)
+    local height = params.pos.y
+    local delta = Vector(params.scale)*0.5*params.size
+    local points = {}
+    points = {{center.x - delta.x, height, center.z - delta.z},
+            {center.x - delta.x, height, center.z + delta.z},
+            {center.x + delta.x, height, center.z + delta.z},
+            {center.x + delta.x, height, center.z - delta.z},
+            {center.x - delta.x, height, center.z - delta.z}
+        }
+    return {points}
+end
+
+function Markup.linePoints(params)  -- requires parameters start and end as vectors
+--print('\nsquarePoints, params=', dump(params))
+    points = {params.start, params['end']}
+    --print(bbcodes['Green'],'\npoints=', dump(points))
+    return {points}
+end
+
+function Markup:clear(object)
+    local object = object or Global
+    object.setVectorLines({})
+    self.allFigures = {}
+end
+
+Markup.pointGenerators = {square=Markup.squarePoints, Square=Markup.squarePoints,
+                          line=Markup.linePoints, Line=Markup.linePoints,
+                         }

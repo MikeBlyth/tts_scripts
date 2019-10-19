@@ -1,0 +1,261 @@
+------===============BUTTON MODULE ===============------------
+
+Button = {}
+
+ButtonArray = {}
+
+function Button:new(id, params) -- id is unique name for this object, params are usual TTS params
+    local obj = {}
+    setmetatable(obj,self)
+    self.__index = self
+    obj.params = copyTable(params) -- copy since they may be changed in each new object
+    obj.id = id
+    obj.state = true
+    obj.toggleParams = {on=copyTable(params), off={color='Grey'}}
+      -- by default, toggling will change button color to grey
+    obj.prevColor = obj.params.color
+    return obj
+end
+
+function Button:setDefaults(defaults)
+  self.params = mergeTables(defaults, self.params)
+end
+
+function Button:clone(id) --
+    local obj = {}
+    setmetatable(obj,self)
+    self.__index = self
+    obj.params = copyTable(self.params) -- copy since they may be changed in each new object
+    obj.id = id
+    obj.prevColor = obj.params.color
+    return obj
+end
+
+function Button:edit(updatedParams)
+    local newParams = mergeTables(self.params, updatedParams)
+    self.params = newParams
+    newParams.id = self.id
+  --  pdump(newParams, 'edit newParams')
+    if self.params.index then -- don't try to update real button that doesn't exist!
+      self.targetObject.editButton(newParams) -- note that self.params must include correct 'index' value
+    end
+end
+
+function Button:toggleState(params)
+-- toggles on/off state, sets params accordingly, and optionally sets the toggle params
+-- params optional, should be like {on={color='Green', text'=OK',}, off={color='Red...'}}
+  if params then self.toggleParams = copyTable(params) end
+  if self.state then self.state = false else self.state = true end -- allows start with no state
+  if self.state then
+    self:edit(self.toggleParams.on)
+  else
+    self:edit(self.toggleParams.off)
+  end
+end
+
+
+function Button:setToggleParams(params)
+-- toggles on/off state, sets params accordingly, and optionally sets the toggle params
+--params  {[state=true/false], [on={color='Green', text'=OK',},] [off={color='Red...'}]}
+    if params then
+        if params.off then self.toggleParams.off = copyTable(params.off) end
+        if params.on then self.toggleParams.on = copyTable(params.on) end
+        if params.state ~=nil then self.state = params.state end
+        if self.state then  -- apply any changes to currently displayed button
+            self:edit(self.toggleParams.on)
+        else
+            self:edit(self.toggleParams.off)
+        end
+    end
+end
+
+
+function Button:hide()
+  self.prevColor = self.params.color
+  self:edit({color=''})
+end
+
+function Button:show()
+  self.params.color = self.prevColor
+  self:edit({color=self.params.color})
+end
+
+function Button:dump()
+
+  s = 'id=' .. self.id .. ', params=' .. dump(self.params) .. ', attached to ' .. tostring(self.targetObject or 'nil')
+  print(s)
+end
+
+------------------------------------------
+
+function ButtonArray:new(params, buttons)  -- just a regular array but with methods
+  assert(params and params.targetObject, 'ButtonArray:new(params, [buttons]) -- params must include at least targetObject')
+-- note that an object can only have one ButtonArray, because
+-- the button indexing has to include all the buttons
+    local obj = {}
+    -- default values
+    setmetatable(obj,self)
+    self.__index = self
+    obj.basePosition = Vector(0,0,-1)
+    obj.origin = 'upperLeft'
+    obj.spacing = Vector(1,0,0)
+    -- defaults for *buttons*
+    obj.defaults = {color = 'Blue', width=500, height=500, font_color = {1,1,1},
+        font_size = 300,
+      }
+    obj.id2index = {}
+
+    for k, v in pairs(params) do
+      if k == 'defaults' then
+        obj.defaults = mergeTables(obj.defaults, v)  -- update defaults
+        --pdump(v.font_size, '\nspecified')
+        --pdump(obj.defaults.font_size, '\nmerged defaults')
+      else
+        obj[k] = v  -- just copy other params to new ButtonArray
+      end
+    end
+    if buttons then
+        obj:reindex()
+        obj:setDefaultPositions()
+        for i, b in ipairs(buttons) do
+          table.insert(obj, b)
+          b:setDefaults(obj.defaults)
+        end
+    end
+    if obj.targetObject then
+      if buttons then
+        for _, b in ipairs(buttons) do
+          obj.targetObject.createButton(b.params)
+        end
+      end
+    end
+    return obj
+end
+
+function ButtonArray:setDefaultPositions()
+    for i, button in ipairs(self) do
+        button.params.position = button.params.position or self.basePosition + (i-1) * self.spacing
+    end
+end
+
+
+function ButtonArray:printButtonIds()
+    local s = 'ButtonArray: {'
+    for _, b in ipairs(self) do
+        s = s .. b.id .. ','
+    end
+    print (s .. '}')
+end
+
+function ButtonArray:add(button)
+    local index = #self -- i.e. number of buttons in array before adding this one
+      -- Note: # counts only array elements, not parameter-like table elements.
+    table.insert(self, button)
+    button.targetObject = self.targetObject
+    button:setDefaults(self.defaults)
+    button.params.index = index
+    self.id2index[button.id] = index + 1
+    self.targetObject:createButton(button.params)
+end
+
+function ButtonArray:remove(button) -- can use button obj or id
+  local button = button
+  local index
+  --     print('\nremoving button ' .. button .. ' from ', self)
+  -- get index of button to be deleted
+  if type(button) == 'table' then
+    index = button.params.index
+  else
+    id = button
+    for i, b in ipairs(self) do
+      if b.id == id then
+        index = b.params.index
+        button = b
+      end
+    end
+  end
+  --pdump(index, 'index')
+  -- button and index are now the right things
+  if index then
+    table.remove(self, index+1)
+    button.params.index = nil  -- since no longer in the array
+    self:reindex()  -- recalc the .index values of each button
+    self.targetObject.removeButton(index)
+    --Wait.time(function() listButtons(self.targetObject) end, 1)
+    return true
+  else
+    print('Button to delete not found, buttons=')
+    listButtons(self.targetObject)
+    --Wait.time(function() print('**********') end, 2)
+    return nil
+  end
+end
+
+function ButtonArray:get(id) -- return the button with id=id
+  return self[self.id2index[id]]
+end
+
+function ButtonArray:removeAll() -- primary version
+    -- removes only the buttons, leaving the array w parameters, defaults ...
+    -- removes from last position to first, keep it this way!
+    local buttonCount = #self.targetObject.getButtons()
+    for i = buttonCount-1, 0, -1 do
+        self.targetObject.removeButton(i)
+        --self.targetObject.removeButton(i)
+    end
+    for i=#self, 1, -1 do
+        table.remove(self, i)
+    end
+end
+
+-- boards[1].buttons:removeAll()
+-- for i = #cx.getButtons()-1, 0, -1 do cx.removeButton(i) end
+-- for i = 0, #cx.getButtons()-1 do printNotes('removing ', i); cx.removeButton(i) end
+--[[
+function ButtonArray:removeAll() -- alternate version
+    -- deletes first button, waits until it's gone, deletes first button ...
+    -- this is safer but slower and clumsier. It also assumes that the coroutine is started
+    -- before the Global.buttonDeleteObject is changed by a subsequent removeAll command.
+    buttonDeleteObject = self.targetObject
+    startLuaCoroutine(Global, 'deleterCoroutine')
+end
+
+function deleterCoroutine()
+    local buttons = buttonDeleteObject.getButtons()
+    if not buttons then return end
+    local count = #buttons
+    while count > 0 do
+        obj.removeButton(0)
+        while obj.getButtons() and #obj.getButtons() == count do
+            coroutine.yield(0)
+        end
+        count = count - 1
+    end
+    coroutine.yield(1)
+end
+--]]
+
+function ButtonArray:reindex()
+    self.id2index = {}
+    for i, b in ipairs(self) do
+        b.params.index = i-1
+        b.targetObject = self.targetObject
+        self.id2index[b.id] = i
+    end
+end
+
+function ButtonArray:edit(params)  -- applies params to all the buttons
+  for i, b in ipairs(self) do
+    b:edit(params)
+  end
+end
+
+function listButtons(obj)
+    local buttons = obj.getButtons()
+    if buttons == nil then print('nil')
+    else
+        for i, b in ipairs(buttons) do
+            print('\t' .. b.index .. '=' .. b.label)
+        end
+    end
+end

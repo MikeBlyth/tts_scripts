@@ -1,0 +1,44 @@
+<Panel
+    id="playerNum"
+    active='false'
+    height="100"
+    width="300"
+    color="rgba(0,0,0,0.80)"
+    padding='10 10 10 10'
+    rectAlignment="UpperCenter"
+    offsetXY="0 -400"
+    >
+<VerticalLayout>
+    <Text fontSize='30' color='Green'>How Many Players?</Text>
+    <HorizontalLayout>
+        <Button id='1' text='1' color='Green' onClick='setPlayerCount(1)'></Button>
+        <Button id='2' text='2' color='Green' onClick='setPlayerCount(2)'></Button>
+        <Button id='3' text='3' color='Green' onClick='setPlayerCount(3)'></Button>
+        <Button id='4' text='4' color='Green' onClick='setPlayerCount(4)'></Button>
+        <Button id='5' text='5' color='Green' onClick='setPlayerCount(5)'></Button>
+        <Button id='6' text='6' color='Green' onClick='setPlayerCount(6)'></Button>
+        <Button id='7' text='7' color='Green' onClick='setPlayerCount(7)'></Button>
+        <Button id='8' text='8' color='Green' onClick='setPlayerCount(8)'></Button>
+    </HorizontalLayout>
+</VerticalLayout>
+</Panel>
+<Panel
+    id="gameOver"
+    active='false'
+    height="300"
+    width="500"
+    color="rgba(1.0, 0.8,0.5,0.80)"
+    padding='10 10 10 10'
+    rectAlignment="UpperCenter"
+    offsetXY="0 -400"
+    childForceExpandWidth='false'
+    childAlignment='LowerCenter'
+    >
+<VerticalLayout childForceExpandWidth='false' childForceExpandHeight='true' childAlignment='LowerCenter'>
+    <Text fontSize='40' color='Green'>Game Over! Check your scores. </Text>
+    <Panel >    </Panel>
+    <Panel width='100' minWidth='100' height='30' minHeight='30'  childForceExpandWidth='false' childForceExpandHeight='false' rectAlignment="LowerCenter">
+        <Button id='ok' text='OK' width='50' minWidth='50' height='40' minHeight='40' color='Green' onClick='closeGameOver' rectAlignment="MiddleCenter"></Button>
+    </Panel>
+</VerticalLayout>
+</Panel>

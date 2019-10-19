@@ -1,0 +1,113 @@
+
+----========================
+DiceSet = {}
+Die = {}
+
+function findDice()
+    objs = getAllObjects()
+    local allDice = {}
+    for _, o in ipairs(objs) do
+        if o.tag == 'Dice' then table.insert(allDice, o) end
+    end
+    return allDice
+end
+
+function Die:new(die)  -- argument is a tts dice object
+    assert(die.tag == 'Dice', 'Error -- Die:new(die) -- requires existing die')
+    local obj = {}
+    setmetatable(obj,self)
+    self.__index = self
+    obj.color = firstWord(die.getName())
+    obj.ttsdie = die
+    obj.name = die.getName()
+    return obj
+end
+
+function DiceSet:new(dice)
+    local obj = {}
+    setmetatable(obj,self)
+    self.__index = self
+    if dice ~= nil then
+        assert(type(dice) == 'Table', 'Error -- DiceSet:new(dice) argument must be table of dice')
+        for _, d in ipairs(dice) do
+            table.insert(obj, d)
+        end
+    end
+    return obj
+end
+
+function DiceSet:add(die)
+    table.insert(self, die)
+end
+
+function DiceSet:remove(name) -- only removes ONE die of that name, and returns it
+    print('removing ', name)
+    for i, d in ipairs(self) do
+        print('--', d.name)
+        if d.name == name then return table.remove(self,i) end
+    end
+end
+
+function DiceSet:dump()
+    s = '{'
+    for i, d in ipairs(self) do
+        s = s .. d.name .. ', '
+    end
+    print(s .. '}')
+end
+
+function DiceSet:roll(whenDone, quick)
+    whenDone = whenDone or onRolled
+    for _, d in ipairs(self) do
+        if quick then
+            d.ttsdie.setValue(math.random(1,6))
+        else
+            d.ttsdie.randomize()
+        end
+    end
+  --print('waiting...')
+    Wait.condition(
+        function()
+            self:getResults()
+            self:onRolled()
+        end,       -- function to call when dice are resting
+    function() return self:checkResting() end,  -- wait until all dice are resting
+    4.0  -- max time to wait for dice to stop moving
+    )
+end
+
+function DiceSet:checkResting()
+    diceSet = self -- diceSet or ourDice
+    for _, d in ipairs(diceSet) do
+        if not d.ttsdie.resting then return false end
+    end
+    return true
+end
+
+function DiceSet:getResults()
+  -- return something like {Red=5, Green=3, ... White={1,4}, sum=14}
+  --print('getResults')
+    self.results = {}
+    local sum = 0
+    for _, d in ipairs(self) do
+        local val = d.ttsdie.getValue()
+        sum = sum + val
+        local color = d.color
+        if self.results[color] == nil then
+           self.results[color] = val
+        else
+          if type(self.results[color]) == 'table' then
+            table.insert(self.results[color], val )
+          else
+            self.results[color] = {self.results[color], val}
+          end
+        end
+    end
+    self.results['sum'] = sum
+    return self.results
+end
+
+function DiceSet:onRolled()
+    print("Results of dice set ", self,  '=' )
+    print(dump(self.results))
+end

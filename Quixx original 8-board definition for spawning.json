@@ -1,0 +1,320 @@
+   {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": -17.6895676,
+        "posY": 0.9822153,
+        "posZ": -19.7337418,
+        "rotX": -6.04162642E-06,
+        "rotY": 180.0039,
+        "rotZ": 1.28925456E-06,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.786770761,
+        "g": 0.786770761,
+        "b": 0.786770761
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "10cc96"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": 18.4989643,
+        "posY": 0.9822155,
+        "posZ": -19.3012066,
+        "rotX": -6.45988666E-06,
+        "rotY": 180.001068,
+        "rotZ": 2.90250568E-07,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "41d766"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": -38.0678024,
+        "posY": 0.982215464,
+        "posZ": -9.539775,
+        "rotX": -1.55833332E-05,
+        "rotY": 269.9877,
+        "rotZ": 2.52243171E-06,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "da26a4"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": -37.85668,
+        "posY": 0.9822155,
+        "posZ": 12.2329054,
+        "rotX": -1.90956762E-05,
+        "rotY": 269.984558,
+        "rotZ": -2.19620915E-06,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "7ca978"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": 36.57233,
+        "posY": 0.9822154,
+        "posZ": -10.5873089,
+        "rotX": -1.30600729E-05,
+        "rotY": 89.98613,
+        "rotZ": -2.03823265E-06,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "ebdc5e"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": 36.5333443,
+        "posY": 0.9822154,
+        "posZ": 11.5811262,
+        "rotX": -2.32132461E-05,
+        "rotY": 89.99121,
+        "rotZ": -1.61101639E-06,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "064eea"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": -17.973711,
+        "posY": 0.9822153,
+        "posZ": 19.4447327,
+        "rotX": -1.23774334E-05,
+        "rotY": 359.990753,
+        "rotZ": 6.37796234E-07,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "a645d1"
+    },
+    {
+      "Name": "Custom_Board",
+      "Transform": {
+        "posX": 17.9844284,
+        "posY": 0.9822153,
+        "posZ": 19.9792385,
+        "rotX": -9.736464E-06,
+        "rotY": 359.990051,
+        "rotZ": 1.0693806E-07,
+        "scaleX": 0.375,
+        "scaleY": 0.375,
+        "scaleZ": 0.375
+      },
+      "Nickname": "",
+      "Description": "",
+      "ColorDiffuse": {
+        "r": 0.7867738,
+        "g": 0.7867738,
+        "b": 0.7867738
+      },
+      "Locked": true,
+      "Grid": true,
+      "Snap": true,
+      "IgnoreFoW": false,
+      "Autoraise": true,
+      "Sticky": true,
+      "Tooltip": true,
+      "GridProjection": false,
+      "HideWhenFaceDown": false,
+      "Hands": false,
+      "CustomImage": {
+        "ImageURL": "http://i.imgur.com/4IfnC8e.png",
+        "ImageSecondaryURL": "",
+        "WidthScale": 1.66705739
+      },
+      "XmlUI": "",
+      "LuaScript": "",
+      "LuaScriptState": "",
+      "GUID": "7223ad"
+    },
