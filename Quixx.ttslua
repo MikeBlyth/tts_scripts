@@ -240,7 +240,7 @@ function onObjectLeaveScriptingZone(zone, obj)
     if obj.tag ~= 'GoPiece' then return end
     local zoneNo = tonumber(string.match(zone.getName(), '(%d)'))
     --print(obj.tag, 'is leaving ', zone.getName())
-    obj.setColorTint(lockedMarkerColor)
+    --obj.setColorTint(lockedMarkerColor)
     local board = boards[zoneNo]
     board:exitingMarker(obj)
 end
@@ -357,7 +357,7 @@ end
 
 function endTurn()
     -- do something
-    activeCard.highlightOff()
+    --activeCard.highlightOff()
     removeCardButtons()
     removeStrayMarkers()
     Markup:clear()
@@ -534,8 +534,10 @@ function ready(card)  -- called when player clicks on the "Done" button
     readyCount = readyCount + 1 -- increment GLOBAL for how many players have clicked Ready
     local markers = scriptingZones[player].getObjects()
     for _, m in ipairs(markers) do
-        m.setLock(true)
-        m.setColorTint(lockedMarkerColor)
+        if m.tag == 'GoPiece' then
+            m.setLock(true)
+            m.setColorTint(lockedMarkerColor)
+        end
     end
     boards[player]:clearSavedStates()
     if readyCount >= playerCount then
