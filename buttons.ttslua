@@ -198,6 +198,7 @@ end
 function ButtonArray:removeAll() -- primary version
     -- removes only the buttons, leaving the array w parameters, defaults ...
     -- removes from last position to first, keep it this way!
+    if self.targetObject.getButtons() == nil then return end
     local buttonCount = #self.targetObject.getButtons()
     for i = buttonCount-1, 0, -1 do
         self.targetObject.removeButton(i)

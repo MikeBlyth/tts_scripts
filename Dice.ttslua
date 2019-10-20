@@ -19,6 +19,7 @@ function Die:new(die)  -- argument is a tts dice object
     self.__index = self
     obj.color = firstWord(die.getName())
     obj.ttsdie = die
+    obj.GUID = die.getGUID() -- needed for restoring after save, when object ref will be gone
     obj.name = die.getName()
     return obj
 end
@@ -104,6 +105,7 @@ function DiceSet:getResults()
         end
     end
     self.results['sum'] = sum
+    --pdump(self.results, 'Dice results')
     return self.results
 end
 

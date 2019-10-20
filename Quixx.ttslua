@@ -1,10 +1,6 @@
-#include util
-#include dice
-#include markup
-#include buttons
---=============================================
-
-function onLoad()
+function onLoad(saved_data)
+    -- saved_data is data that was saved when the game was saved manually or by autosave
+    restoredGame = (saved_data ~= nil and saved_data ~= '')
     print(bbcodes.Red, '\n\nStarting')
     math.randomseed( os.time())
     activeCards = {1,2,3,4,5,6,7,8}  -- default, for 8 players
@@ -44,21 +40,31 @@ function onLoad()
     gameOver = false
     boards = {} -- virtual player boards
     cardsGUIDs = {'10cc96', '41d766', 'ebdc5e', '064eea', '7223ad', 'a645d1', '7ca978', 'da26a4'}
-    bowls = {'34a199', '0ec9ea', '655015', '9eeedb', 'ad7483', '369874', '693944', 'c106f1'}
     cards2Zones = {['10cc96']= 1, ['41d766']=2, ['ebdc5e']=3, ['064eea']=4, ['7223ad']=5, ['a645d1']=6, ['7ca978']=7, ['da26a4']=8}
       -- if for some reason cards are ever replaced, new GUID's will need to be entered into above table!
     cards = {} -- ordered list of actual cards (board objects showing the scoring cards)
     for _, guid in ipairs(cardsGUIDs) do
         table.insert(cards, getObjectFromGUID(guid))
     end
-    UI.setAttribute('playerNum', 'active', true) -- put up menu to select number of players
+    -- other Global variables
+
+
     eraseScriptingZones()  -- erases the zones themselves as they may have been saved and loaded
     createZones()
     setAllSnaps()
     makeBoards() -- create boards to store in the boards table
     initializeDice()
     initBoardConstants()
-    Wait.condition(function() startTurn() end, function() return playerCount ~= nil end)
+    if restoredGame then
+        finishedLoading = false
+        loadSaved(saved_data) -- overrides the freshly created new game state for
+            -- boards, turnNumber, allDice, activePlayer
+        Wait.time(function() finishedLoading = true end, 1.0)
+        startTurn()
+    else
+        UI.setAttribute('playerNum', 'active', true) -- put up menu to select number of players
+        Wait.condition(function() startTurn() end, function() return playerCount ~= nil end)
+    end
     cx = cards[1] -- just for easy debugging on command line
 end
 
@@ -116,11 +122,10 @@ function onObjectDrop(colorName, obj)
     -- print ('row=' .. row, 'col=', col)
 end
 
-boardHeight = 1.5  -- Board height ... not sure why, but this works
 
 function rowCol(shPos)  -- return row/col from a sheet position
-    rowNum = math.floor((shPos.z - rowStart)/rowHeight) + 1
-    colNum = math.floor((shPos.x - colStart)/colWidth) + 1
+    local rowNum = math.floor((shPos.z - rowStart)/rowHeight) + 1
+    local colNum = math.floor((shPos.x - colStart)/colWidth) + 1
     return rowNum, colNum
 end
 
@@ -184,6 +189,8 @@ function spawn_zone_callback()
 end
 -----============== ENTER SCRIPTING ZONE =================================
 function onObjectEnterScriptingZone(zone, obj)  -- when any object enters the card area, scripting zone
+    if not finishedLoading then return end
+    -- print('Obj ', obj.tag, ' entered scripting zone ', zone.getName())
     if obj.tag ~= 'GoPiece' then return end
     if (zone == lastZone) and (obj == lastObj) then return end  -- b/o double calls for same event
     lastZone = zone
@@ -346,13 +353,16 @@ function endTurn()
     -- do something
     activeCard.highlightOff()
     removeCardButtons()
-    -- delete all unlocked
     local objs = getAllObjects()
-    for _, o in ipairs(objs) do
-        if (o.tag=='GoPiece') and (o.getLock()==false) then o.destruct() end
-    end
+--    removeStrayMarkers()
     Markup:clear()
     startTurn()
+end
+
+function removeStrayMarkers()
+    for _, o in ipairs(objs) do -- delete all unlocked markers
+        if (o.tag=='GoPiece') and (o.getLock()==false) then o.destruct() end
+    end
 end
 
 function doGameOver()
@@ -501,7 +511,10 @@ function ready(card)  -- called when player clicks on the "Done" button
     local markers = scriptingZones[player].getObjects()
     for _, m in ipairs(markers) do m.setLock(true) end
     boards[player]:clearSavedStates()
-    if readyCount >= playerCount then endTurn() end
+    if readyCount >= playerCount then
+        print('All players clicked ready')
+        endTurn()
+    end
 end
 
 ---========= MARKUP -- highlighting squares and so on --========
@@ -584,10 +597,11 @@ function Board:new(player)
     obj.lastMarker = {}
     obj.markedThisTurn = 0
     obj.penaltyThisTurn = 0
+    -- obj.ok example {{7,8,9,10, bool={false, false, ... true, true}}}
     obj.card = cards[player]  -- the "physical" scorecard visible on table
+    --print('player=', player, ', card=', obj.card or 'nil')
     obj.buttons = ButtonArray:new({targetObject = obj.card, defaults={width = 2000, height = 1000, font_size = 700,
             color = {0.5,0,0.5}, font_color = {1,1,1} }})
-    assert(obj.buttons.defaults.font_size == 700)
     return obj
 end
 

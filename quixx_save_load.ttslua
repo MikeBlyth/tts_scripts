@@ -1,0 +1,146 @@
+-- Things that need to be saved for game state (for save and restore)
+-- boards
+-- locked
+-- turnNumber
+-- roundNumber
+-- gameOver
+-- cards
+-- allDice
+-- diceRolled
+-- readyCount
+-- gameOver
+-- activeCard ?? -- but it's an object, so how is it saved? save the number instead
+-- activePlayer
+--
+
+function onSave()
+    --print('onSave')
+    if gameOver then return nil end
+    data_table = {
+    boards = serializeBoards(),
+    allDice = allDice:serialize(), -- need to have GUIDs in the allDice object for restoring
+    locked = locked,
+    turnNumber = turnNumber,
+    roundNumber = roundNumber,
+    gameOver = gameOver,
+    --lastZone = lastZone,
+    diceRolled = diceRolled,
+    readyCount = readyCount,
+    gameOver = gameOver,
+    activePlayer = activePLayer
+    }
+    --if lastObj then data_table.lastObjGUID = lastObj.getGUID() end
+    saved_data = JSON.encode(data_table)
+    return saved_data
+end
+
+function loadSaved(saved_data)
+--    print('Processing saved data=', saved_data or 'nil')
+--print('Processing saved data=')
+    if saved_data == '' or saved_data == nil then print('.. not found') end
+    if saved_data and saved_data ~= "" then
+        local loaded_data = JSON.decode(saved_data)
+        allDice = DiceSet.deserialize(loaded_data.allDice) -- need to have GUIDs in the allDice object for restoring
+        deserializeBoards(loaded_data.boards)
+        locked = loaded_data.locked
+        turnNumber = loaded_data.turnNumber
+        roundNumber = loaded_data.roundNumber
+        gameOver = loaded_data.gameOver
+        lastZone = loaded_data.lastZone
+        if loaded_data.lastObjGUID then
+            lastObj = getObjectFromGUID(loaded_data.lastObjGUID)
+        end
+        diceRolled = loaded_data.diceRolled
+        readyCount = loaded_data.readyCount
+        gameOver = loaded_data.gameOver
+        activePlayer = loaded_data.activePlayer
+        activeCard = cards[activePlayer]
+        for _,die in ipairs(allDice) do
+            die.ttsdie = getObjectFromGUID(die.GUID)
+        end
+        setPlayerCount(nil, #loaded_data.boards)
+        removeStrayMarkers() -- delete all unlocked markers
+    end
+end
+
+
+function Board:serialize() -- return JSON serialization of board, a bit incomplete
+    -- needed because can't serialize some pieces including objects, metatable, buttons array
+    result = {player=self.player}
+    for _, key in ipairs({
+                'boxes', 'blocked', 'rowMax', 'showHints',
+                'markedThisTurn', 'penaltyThisTurn'
+            }) do
+        result[key] = JSON.encode(self[key])
+    end
+    --if self.lastMarker.obj then result.lastMarkerGUID = self.lastMarker.obj.getGUID() end
+    --print('saving markedThisTurn=', self.markedThisTurn)
+    return result
+end
+
+function serializeBoards()
+    serialized = {}
+    for _, n in ipairs(activeCards) do
+        table.insert(serialized, boards[n]:serialize())
+    end
+    return serialized
+end
+
+function Board.deserialize(t)
+    saved_t = t
+    --print ('\nCreating board for player ', t.player or 'nil')
+    --pdump(t)
+    b = Board:new(t.player)
+    for _, key in ipairs({
+                'boxes', 'blocked', 'rowMax', 'showHints',
+                'markedThisTurn', 'penaltyThisTurn'
+            }) do
+        --print ('decoding board key ', key, '=', t[key] or 'nil')
+        b[key] = JSON.decode(t[key])
+    end
+    --print('restoring markedThisTurn=', t.markedThisTurn)
+
+    b:calculateOK(allDice.results)
+    --if t.lastMarkerGUID then b.lastMarker.obj = getObjectFromGUID(t.lastMarkerGUID) end
+    return b
+end
+
+function deserializeBoards(t)
+    local board
+    for _, b in ipairs(t) do
+        board = Board.deserialize(b)
+        board.card = cards[board.player]
+        boards[board.player] = board  -- insert into the global boards array
+    end
+end
+
+function Die:serialize()
+    local data = {color=self.color, GUID = self.GUID, name=self.name}
+    return data
+end
+
+function Die.deserialize(params)
+    local ttsdie = getObjectFromGUID(params.GUID)
+    local die = Die:new(ttsdie)
+    die.color = params.color
+    die.name = params.name
+    return die
+end
+
+function DiceSet:serialize()
+    -- DiceSet is nothing but an array of Die objects plus results table
+    local data = {}
+    for _, d in ipairs(self) do
+        table.insert(data, d:serialize())
+    end
+    return data
+end
+
+function DiceSet.deserialize(diceTable)
+    local set = DiceSet:new()
+    for _,d in ipairs(diceTable) do
+        set:add(Die.deserialize(d))
+    end
+    set:getResults()
+    return set
+end
