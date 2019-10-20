@@ -34,6 +34,8 @@ function onLoad(saved)
     }
 
     locked = {false, false, false, false}
+    lockedMarkerColor = {0.2, 0.2, 0.8}
+    unlockedMarkerColor = {0.0, 0.8, 0.8, 0.9}
     defaultButtonColor = {0.5, 0, 0.5}
     scoreTable = {0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78 }
     turnNumber = 0
@@ -238,7 +240,7 @@ function onObjectLeaveScriptingZone(zone, obj)
     if obj.tag ~= 'GoPiece' then return end
     local zoneNo = tonumber(string.match(zone.getName(), '(%d)'))
     --print(obj.tag, 'is leaving ', zone.getName())
-    obj.highlightOff()
+    obj.setColorTint(lockedMarkerColor)
     local board = boards[zoneNo]
     board:exitingMarker(obj)
 end
@@ -295,6 +297,8 @@ function DiceSet:onRolled()  -- overrides default onRolled function
     -- printNotes("Results of dice set ", self,  '=' )
     -- printNotes(dump(self.results))
     removeRollButton(activePlayer)
+    --if true then allDice.results = {White={5,6}, Red=6, Yellow=6, Green=1, Blue=1, sum=20} end
+        -- use above to set dice outcome to arbitrary values, though the dice won't show those numbers
     analyzeAndMark()
 end
 
@@ -529,7 +533,10 @@ function ready(card)  -- called when player clicks on the "Done" button
     boards[player].buttons:remove('ready')
     readyCount = readyCount + 1 -- increment GLOBAL for how many players have clicked Ready
     local markers = scriptingZones[player].getObjects()
-    for _, m in ipairs(markers) do m.setLock(true) end
+    for _, m in ipairs(markers) do
+        m.setLock(true)
+        m.setColorTint(lockedMarkerColor)
+    end
     boards[player]:clearSavedStates()
     if readyCount >= playerCount then
         print('All players clicked ready')
@@ -659,6 +666,7 @@ function Board:restoreState()
     end
     if self.lastMarker.obj then
         self.lastMarker.obj.setLock(false) -- since it's now the last, so free to be moved
+        self.lastMarker.obj.setColorTint(unlockedMarkerColor)
     end
     analyzeAndMark()
 end
@@ -760,6 +768,7 @@ function Board:setBox(row, col, obj) -- selected row and column, object that was
     return false
   else
     if not self.ok[row].bool[col] then
+        print('Invalid, ', row, ':', col)
         printMessage(player, "Not a valid choice", {duration=2, font_size=550})
         return false
     end
@@ -771,12 +780,12 @@ function Board:setBox(row, col, obj) -- selected row and column, object that was
     self.rowMax[row] = col
     if self.lastMarker.obj then
         self.lastMarker.obj.setLock(true) -- lock previous
-        self.lastMarker.obj.highlightOff() -- and unhighlight it
+        self.lastMarker.obj.setColorTint(lockedMarkerColor) -- and unhighlight it
     end
     -- :-( It's bad practice to have the virtual Boards manipulating the "real" objects,
     -- so consider delegating that back to another function
     self.lastMarker.obj=obj
-    obj.highlightOn('Yellow')
+    obj.setColorTint(unlockedMarkerColor)
     -- special for activePlayer
     if self.player == activePlayer then
         self.usedWhiteFirst = usingWhiteDice(chosenNumber) -- this play used white dice, so another turn is OK
@@ -925,13 +934,14 @@ function Board:calculateOK(rolls)
         end
       end
   end
-  if (self.markedThisTurn > 0) and (not self.usedWhiteFirst) then return end
-        -- if white dice were not used first, then no moves are available
   for row = 1, 4 do  -- mark the lock square as OK if row complete
       if (self.rowMax[row] == 11) and (locked[row]=='pending' or locked[row]==false) then
+          --print ('Setting ok ', row, ':', 12)
           self:setOK(row,12)  -- mark the lock square as OK if row complete
       end
   end
+  if (self.markedThisTurn > 0) and (not self.usedWhiteFirst) then return end
+  -- if white dice were not used first, then no moves are available
   if self:myTurn() then -- check combos of color & white
     for _, color in ipairs{'Red', 'Yellow', 'Green', 'Blue'} do
         local val = rolls[color]
@@ -1042,7 +1052,7 @@ end
 function spawnMarkers()
     params =    {
                 sound = true,
-                type = 'go_game_piece_black',
+                type = 'go_game_piece_white',
                 }
     for _, c in ipairs(activeCards) do
         params.position = markerHome(c)
@@ -1050,7 +1060,7 @@ function spawnMarkers()
     end
     --print('activePlayer=', activePlayer)
     -- spawn an extra piece for the active player
-    params.type = 'go_game_piece_white'
+    --params.type = 'go_game_piece_white'
     params.position = markerHome(activePlayer) + Vector(1, 0.5, 0)
     spawnObject(params)
 end

@@ -44,7 +44,7 @@ end
 function DiceSet:remove(name) -- only removes ONE die of that name, and returns it
     print('removing ', name)
     for i, d in ipairs(self) do
-        print('--', d.name)
+        --print('--', d.name)
         if d.name == name then return table.remove(self,i) end
     end
 end
@@ -88,6 +88,7 @@ end
 function DiceSet:getResults()
   -- return something like {Red=5, Green=3, ... White={1,4}, sum=14}
   --print('getResults')
+  -- Override for testing:
     self.results = {}
     local sum = 0
     for _, d in ipairs(self) do
@@ -105,7 +106,6 @@ function DiceSet:getResults()
         end
     end
     self.results['sum'] = sum
-    --pdump(self.results, 'Dice results')
     return self.results
 end
 
