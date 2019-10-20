@@ -4,7 +4,7 @@ DiceSet = {}
 Die = {}
 
 function findDice()
-    objs = getAllObjects()
+    local objs = getAllObjects()
     local allDice = {}
     for _, o in ipairs(objs) do
         if o.tag == 'Dice' then table.insert(allDice, o) end
@@ -50,7 +50,7 @@ function DiceSet:remove(name) -- only removes ONE die of that name, and returns 
 end
 
 function DiceSet:dump()
-    s = '{'
+    local s = '{'
     for i, d in ipairs(self) do
         s = s .. d.name .. ', '
     end
@@ -78,7 +78,7 @@ function DiceSet:roll(whenDone, quick)
 end
 
 function DiceSet:checkResting()
-    diceSet = self -- diceSet or ourDice
+    local diceSet = self -- diceSet or ourDice
     for _, d in ipairs(diceSet) do
         if not d.ttsdie.resting then return false end
     end

@@ -1,6 +1,6 @@
-function onLoad(saved_data)
+function onLoad(saved)
     -- saved_data is data that was saved when the game was saved manually or by autosave
-    restoredGame = (saved_data ~= nil and saved_data ~= '')
+    restoredGame = (saved ~= nil and saved ~= '')
     print(bbcodes.Red, '\n\nStarting')
     math.randomseed( os.time())
     activeCards = {1,2,3,4,5,6,7,8}  -- default, for 8 players
@@ -57,7 +57,7 @@ function onLoad(saved_data)
     initBoardConstants()
     if restoredGame then
         finishedLoading = false
-        loadSaved(saved_data) -- overrides the freshly created new game state for
+        loadSaved(saved) -- overrides the freshly created new game state for
             -- boards, turnNumber, allDice, activePlayer
         Wait.time(function() finishedLoading = true end, 1.0)
         startTurn()
@@ -353,13 +353,14 @@ function endTurn()
     -- do something
     activeCard.highlightOff()
     removeCardButtons()
-    local objs = getAllObjects()
---    removeStrayMarkers()
+    removeStrayMarkers()
     Markup:clear()
+    generateSavedData()  -- snapshot for possible save; restore will revert to state at end of turn
     startTurn()
 end
 
 function removeStrayMarkers()
+    local objs = getAllObjects()
     for _, o in ipairs(objs) do -- delete all unlocked markers
         if (o.tag=='GoPiece') and (o.getLock()==false) then o.destruct() end
     end

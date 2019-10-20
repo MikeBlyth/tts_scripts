@@ -13,25 +13,33 @@
 -- activePlayer
 --
 
-function onSave()
-    --print('onSave')
+function generateSavedData()  -- creates global variable saved_data which is used
+    -- with onSave to save the game state.
+    -- Called at end of turn, so it's always a bookmark of the state at that
+    -- point and not some random time in the turn cycle.
     if gameOver then return nil end
-    data_table = {
+    saved_data = {
     boards = serializeBoards(),
     allDice = allDice:serialize(), -- need to have GUIDs in the allDice object for restoring
     locked = locked,
     turnNumber = turnNumber,
+    activePlayerIndex = activePlayerIndex,
     roundNumber = roundNumber,
     gameOver = gameOver,
-    --lastZone = lastZone,
     diceRolled = diceRolled,
     readyCount = readyCount,
     gameOver = gameOver,
-    activePlayer = activePLayer
+    playerCount = playerCount,
+    activePlayer = activePLayer,
     }
-    --if lastObj then data_table.lastObjGUID = lastObj.getGUID() end
-    saved_data = JSON.encode(data_table)
     return saved_data
+end
+
+function onSave()
+    if gameOver then return nil end
+    if saved_data then
+        return JSON.encode(saved_data)
+    end
 end
 
 function loadSaved(saved_data)
@@ -41,24 +49,31 @@ function loadSaved(saved_data)
     if saved_data and saved_data ~= "" then
         local loaded_data = JSON.decode(saved_data)
         allDice = DiceSet.deserialize(loaded_data.allDice) -- need to have GUIDs in the allDice object for restoring
+        loaded_data.allDice = nil -- remove so this doesn't appear in do-loop
         deserializeBoards(loaded_data.boards)
-        locked = loaded_data.locked
-        turnNumber = loaded_data.turnNumber
-        roundNumber = loaded_data.roundNumber
-        gameOver = loaded_data.gameOver
-        lastZone = loaded_data.lastZone
+        setPlayerCount(nil, #loaded_data.boards)
+        loaded_data.boards = nil
         if loaded_data.lastObjGUID then
             lastObj = getObjectFromGUID(loaded_data.lastObjGUID)
+            loaded_data.lastObjGUID = nil
         end
-        diceRolled = loaded_data.diceRolled
-        readyCount = loaded_data.readyCount
-        gameOver = loaded_data.gameOver
-        activePlayer = loaded_data.activePlayer
+        -- remaining fields are just copied to global environment
+        for k, v in pairs(loaded_data) do
+            _G[k] = v
+        end
+        -- locked = loaded_data.locked
+        -- turnNumber = loaded_data.turnNumber
+        -- roundNumber = loaded_data.roundNumber
+        -- gameOver = loaded_data.gameOver
+        -- lastZone = loaded_data.lastZone
+        -- diceRolled = loaded_data.diceRolled
+        -- readyCount = loaded_data.readyCount
+        -- gameOver = loaded_data.gameOver
+        -- activePlayer = loaded_data.activePlayer
+        -- for _,die in ipairs(allDice) do
+        --     die.ttsdie = getObjectFromGUID(die.GUID)
+        -- end
         activeCard = cards[activePlayer]
-        for _,die in ipairs(allDice) do
-            die.ttsdie = getObjectFromGUID(die.GUID)
-        end
-        setPlayerCount(nil, #loaded_data.boards)
         removeStrayMarkers() -- delete all unlocked markers
     end
 end
