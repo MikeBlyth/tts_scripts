@@ -63,6 +63,7 @@ function onLoad(saved)
         startTurn()
     else
         UI.setAttribute('playerNum', 'active', true) -- put up menu to select number of players
+        finishedLoading = true -- this enables detection of objects entering scripting zones
         Wait.condition(function() startTurn() end, function() return playerCount ~= nil end)
     end
     cx = cards[1] -- just for easy debugging on command line
@@ -162,7 +163,7 @@ end
 
 function createZones()
     scriptingZones = {}  -- will keep zones in this array in order
-    print('createZones')
+    --print('createZones')
     for i, _ in ipairs(zones) do
         local rotations = {0, 0, 90, 90, 0, 0, 90, 90}
         spawnParams = {
@@ -346,6 +347,7 @@ function startTurn()
     bx = boards[1] -- only for DEBUGGING
     cx = cards[1]  -- only for DEBUGGING
     playerMessageButton(activePlayer, 'Your turn', {color='Green', duration=2.0})
+    removeStrayMarkers()
     spawnMarkers()
 end
 
@@ -359,10 +361,27 @@ function endTurn()
     startTurn()
 end
 
+function countStrayMarkers()
+    local objs = getAllObjects()
+    local i = 0
+    local guids = {}
+    for _, o in ipairs(objs) do -- delete all unlocked markers
+        if (o.tag=='GoPiece') and (o.getLock()==false) then
+            i = i+1
+            table.insert(guids, o.getGUID())
+        end
+    end
+    pdump(guids, 'Stray')
+    return i
+end
+
 function removeStrayMarkers()
     local objs = getAllObjects()
     for _, o in ipairs(objs) do -- delete all unlocked markers
-        if (o.tag=='GoPiece') and (o.getLock()==false) then o.destruct() end
+        if (o.tag=='GoPiece') and (o.getLock()==false) then
+            o.setColorTint('Green')
+            o.destruct()
+        end
     end
 end
 
