@@ -4,7 +4,7 @@ bbcodes = bbcodes or {Red='[FF0000]', White='[FFFFFF]', Blue='[0000FF]', Green='
 
 
 function dump(o) -- modified
-    if o == nil then return 'nil'
+    if o == nil then return 'nil' end
     if type(o) == 'table' then
       local s = '{ '
       if tableIsArray(o) then
@@ -152,4 +152,71 @@ function rotate(v, angle)  -- 2d rotation of standard TTS position vector
     local x2 = (cos * v.x) - (sin * v.z)
     local z2 = (sin * v.x) + (cos * v.z)
     return Vector(x2, v.y, z2)
+end
+
+-- ======== Formatting =====================
+function fmt2(f)
+  return string.format("%.2f", f)
+end
+
+------============ MAKE PRINTABLE ===========
+function makePrintable(t, newToString)
+-- Make a table object printable with 'print(t)' using aux function tostring.
+-- Ways to call:
+--   - makePrintable(t) -- uses an already-existing t.tostring(t) or dump(t)
+--     e.g. t={1,2,3};
+--			function t.tostring(x) return x[1] .. ':' .. x[2] .. ':' .. x[3] end
+--			makePrintable(t)
+--   - makePrintable(t, newToString) -- uses new fx (in any namespace)
+--   - e.g. makePrintable(t, myArrayDump)
+  local mt = getmetatable(t)
+  if mt==nil then
+    mt = {}
+    setmetatable(t,mt)
+  end
+  if newToString then
+    t.tostring = newToString
+  end
+  --assert(t.tostring, "printtable requires tostring object.tostring function")
+  if t.tostring == nil then t.tostring = dump end
+  mt.__tostring = t.tostring
+end
+
+--===================== SHAPES ===================
+
+Polygon = {}
+
+
+function Polygon:new(p)
+
+  local defaults = {sides=4, radius = 1, center=Vector(0,0,0), yrotation=0 }
+  local params = mergeTables(defaults, p or {})
+  local obj = {}
+  setmetatable(obj, self)
+  self.__index = self
+  self.__tostring = self.tostring
+  local center = params.center
+  local angle = params.yrotation
+  local r = params.radius
+  local delta_angle = 2*math.pi/params.sides
+  local points = {}
+  local x, z
+  local y = center[2]
+  for i=0, params.sides-1 do
+    x = math.cos(angle) * r + center.x
+    z = math.sin(angle) * r + center.z
+    table.insert(points, Vector(x,y,z))
+    angle = angle + delta_angle
+  end
+  obj.points = points
+  return obj
+end
+
+function Polygon.tostring(p)
+  local s = 'Polygon ' .. #p.points .. ' = '
+  local points = p.points
+  for _, v in ipairs(points) do
+    s = s .. '(' .. fmt2(v[1]) .. ', ' .. fmt2(v[2]) .. ', ' .. fmt2(v[3]) .. '), '
+  end
+  return s
 end
