@@ -1,0 +1,150 @@
+---------- COORDINATE SYSTEMS ===============================
+
+CoordSys = {__class="CoordSys",}
+
+function CoordSys:new(worldOffset, worldRotation) -- (vector, degrees rotation on y axis)
+-- Generate a coordinate system, just an origin and angle relative to the game origin and orientation
+  local obj = {origin=Vector(worldOffset), rotation=worldRotation or 0}
+  setmetatable(obj, self)
+  self.__tostring=self.tostring
+  return obj
+end
+
+CoordSys.global = CoordSys:new({0,0,0},0)
+
+function CoordSys.tostring(c)
+  local x = fmt2(c.origin.x)
+  local y = fmt2(c.origin.y)
+  local z = fmt2(c.origin.z)
+  local rot = math.floor(c.rotation+0.5)
+  return "CoordSys {origin=" .. "(" .. x .. ', ' .. y ..  ', ' .. z .. '), rot=' .. c.rotation .. '}'
+end
+
+function CoordSys.subtract(a, b)
+  -- return new CoordSys representing the difference
+  local origin_diff = subtractVector(a.origin, b.origin)
+  local rot_diff = a.rotation - b.rotation
+  return CoordSys:new(origin_diff, rot_diff)
+end
+CoordSys.__sub = CoordSys.subtract
+
+-----------======================================  POINTS ====
+
+Point = {__class='Point'}
+
+function Point:new(v, coordSys)
+  assert(type(v)=='table' and v[1] and v[2] and v[3], "Point:new requires vector and optional coordinate system")
+  local obj = Vector(v)
+  obj.coordSys = coordSys or CoordSys.global
+  setmetatable(obj, self)
+  self.__index = self
+  self.__tostring = self.tostring
+  return obj
+end
+
+function Point.tostring(p, withCoords)
+  if p == nil then return 'nil' end
+  local s =  '(' .. fmt2(p[1]) .. ', ' .. fmt2(p[2]) .. ', ' .. fmt2(p[3]) .. ')'
+  if withCoords then
+    s = s .. ', ' .. CoordSys.tostring(p.coordSys)
+  end  
+  return s
+end
+
+Polygon = {__class='Polygon'}
+
+function Point:translate(v)
+  --return Point:new(self:toVector + v)
+return Point:new(addVector(self:toVector(), v))
+end  
+
+function Point:rotate2D(angle)
+  local newVector = vRotate2D(self:toVector(), angle)
+  return Point:new(newVector)
+end  
+
+function Point:toVector()
+  return Vector(self[1], self[2], self[3])
+end
+
+function Point:toLocal(coordSys)  -- point must start as global
+-- return a new point representing original point with new coord system
+  local newCoordSys = coordSys or CoordSys.global
+  local coordDiff = CoordSys.global - newCoordSys
+  local reOrigin = Vector(self) + coordDiff.origin
+  local rotated = reOrigin:rotate(coordDiff.rotation)
+  return Point:new(rotated, newCoordSys)
+end
+
+function Point:toGlobal()
+-- return a new point representing original point with new coord system
+  local rotated = Vector(self):rotate(self.coordSys.rotation)
+  local reOrigin = rotated + self.coordSys.origin
+  return Point:new(reOrigin, newCoordSys)
+end
+
+function Point:rebase(coordSys)
+-- return a new point representing original point with new coord system
+  local newCoordSys = coordSys or CoordSys.global
+  local global = self:toGlobal()
+  local newLocal = global:toLocal(newCoordSys)
+  return Point:new(newLocal, newCoordSys)
+end
+
+function Polygon:new(p)
+  local obj = {}
+  setmetatable(obj, self)
+  self.__index = self
+  self.__tostring = self.tostring
+  local defaults = {sides=4, radius = 1, center=Vector(0,0,0), yrotation=0, coordSys=CoordSys.global }
+  local params = mergeTables(defaults, p or {})
+  local center = params.center
+  local angle = params.yrotation
+  local r = params.radius
+  local delta_angle = 2*math.pi/params.sides
+  local points = {}
+  local x, z
+  local y = center[2]
+  obj.coordSys = params.coordSys
+  obj.center = params.center
+  for i=0, params.sides-1 do
+    x = math.cos(angle) * r + center.x
+    z = math.sin(angle) * r + center.z
+    table.insert(points, Point:new({x,y,z}, params.coordSys))
+    angle = angle + delta_angle
+  end
+  obj.points = points
+  return obj
+end
+
+function Polygon.tostring(p)
+  local s = 'Polygon ' .. #p.points .. ' = '
+  local points = p.points
+  for _, v in ipairs(points) do
+    s = s .. '(' .. fmt2(v[1]) .. ', ' .. fmt2(v[2]) .. ', ' .. fmt2(v[3]) .. '), '
+  end
+  return s 
+end
+
+function Polygon.square(p)
+  local defaults = {size= 1}
+  local params = mergeTables(defaults, p or {})
+  params.sides = 4
+  params.radius = params.size * math.sqrt(2) / 2
+  params.yrotation = params.yrotation or math.pi/4
+  return Polygon:new(params)   
+end
+
+function Polygon:translate(v)
+end  
+
+function Polygon:rebase(coordSys) 
+  local obj = Polygon:new({sides=0})
+  obj.points={}
+  obj.coordSys = coordSys or CoordSys.global
+  obj.center = self.center
+  for _, p in ipairs(self.points) do
+    table.insert(obj.points, p:rebase(coordSys))
+  end
+  return obj
+end
