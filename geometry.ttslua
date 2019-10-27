@@ -4,13 +4,14 @@ CoordSys = {__class="CoordSys",}
 
 function CoordSys:new(worldOffset, worldRotation) -- (vector, degrees rotation on y axis)
 -- Generate a coordinate system, just an origin and angle relative to the game origin and orientation
-  local obj = {origin=Vector(worldOffset), rotation=worldRotation or 0}
+  local obj = {origin=Vector(worldOffset or {0,0,0}), rotation=worldRotation or 0}
   setmetatable(obj, self)
+  self.__index = self
   self.__tostring=self.tostring
   return obj
 end
-
 CoordSys.global = CoordSys:new({0,0,0},0)
+
 
 function CoordSys.tostring(c)
   local x = fmt2(c.origin.x)
@@ -28,47 +29,55 @@ function CoordSys.subtract(a, b)
 end
 CoordSys.__sub = CoordSys.subtract
 
+function CoordSys:isGlobal()
+  result = true
+  for _,v in ipairs ({self.origin[1], self.origin[2], self.origin[3], self.rotation}) do
+     if v ~= 0 then result = false end
+  end
+  return result
+end
+
 -----------======================================  POINTS ====
 
 Point = {__class='Point'}
 
+--- a Point needs to be a subclass of a vector. For now, acccomplish that just by making it
+--- a vector with extra fields, and add methods to the Vector class.
+--- (For testing outside TTS, we have to use the Vec class instead of Vector, since the "Vector()"
+---  method is a generator for the Vector class).
+
 function Point:new(v, coordSys)
-  assert(type(v)=='table' and v[1] and v[2] and v[3], "Point:new requires vector and optional coordinate system")
+  assert(type(v)=='table' and (v[1] or v[x]) and (v[2] or v[y]) and (v[3] or v[z]),
+    "Point:new requires vector and optional coordinate system")
   local obj = Vector(v)
   obj.coordSys = coordSys or CoordSys.global
-  setmetatable(obj, self)
-  self.__index = self
-  self.__tostring = self.tostring
   return obj
 end
 
-function Point.tostring(p, withCoords)
-  if p == nil then return 'nil' end
-  local s =  '(' .. fmt2(p[1]) .. ', ' .. fmt2(p[2]) .. ', ' .. fmt2(p[3]) .. ')'
-  if withCoords then
-    s = s .. ', ' .. CoordSys.tostring(p.coordSys)
-  end  
-  return s
+-- NOT functional at this point
+-- function Point.tostring(p, withCoords)
+--   if p == nil then return 'nil' end
+--   local s =  '(' .. fmt2(p[1]) .. ', ' .. fmt2(p[2]) .. ', ' .. fmt2(p[3]) .. ')'
+--   if withCoords then
+--     s = s .. ', ' .. CoordSys.tostring(p.coordSys)
+--   end
+--   return s
+-- end
+
+-----!!!!!!!------ MUST CHANGE Vec: to Vector when importing to TTS !!!!!!!!!!! ----------
+function Vector:rotate2D(angle)  -- make Point:rotate2D if using multiple inheritance from Point & Vector
+  local newVector = vRotate2D(self, angle)
+  return Point:new(newVector, self.coordSys)
 end
 
-Polygon = {__class='Polygon'}
+-- function Point:toVector()
+--   return Vector(self[1], self[2], self[3])
+-- end
 
-function Point:translate(v)
-  --return Point:new(self:toVector + v)
-return Point:new(addVector(self:toVector(), v))
-end  
-
-function Point:rotate2D(angle)
-  local newVector = vRotate2D(self:toVector(), angle)
-  return Point:new(newVector)
-end  
-
-function Point:toVector()
-  return Vector(self[1], self[2], self[3])
-end
-
-function Point:toLocal(coordSys)  -- point must start as global
+-----!!!!!!!------ MUST CHANGE Vec: to Vector when importing to TTS !!!!!!!!!!! ----------
+function Vector:toLocal(coordSys)  -- point must start as global
 -- return a new point representing original point with new coord system
+  assert((self.coordSys==nil or self.coordSys:isGlobal()))
   local newCoordSys = coordSys or CoordSys.global
   local coordDiff = CoordSys.global - newCoordSys
   local reOrigin = Vector(self) + coordDiff.origin
@@ -76,20 +85,27 @@ function Point:toLocal(coordSys)  -- point must start as global
   return Point:new(rotated, newCoordSys)
 end
 
-function Point:toGlobal()
+-----!!!!!!!------ MUST CHANGE Vec: to Vector when importing to TTS !!!!!!!!!!! ----------
+function Vector:toGlobal()
 -- return a new point representing original point with new coord system
-  local rotated = Vector(self):rotate(self.coordSys.rotation)
+  local origCoordSys = self.coordSys or CoordSys.global
+  local rotated = Vector(self):rotate(origCoordSys.rotation)
   local reOrigin = rotated + self.coordSys.origin
   return Point:new(reOrigin, newCoordSys)
 end
 
-function Point:rebase(coordSys)
+-----!!!!!!!------ MUST CHANGE Vec: to Vector when importing to TTS !!!!!!!!!!! ----------
+function Vector:rebase(coordSys)
 -- return a new point representing original point with new coord system
   local newCoordSys = coordSys or CoordSys.global
   local global = self:toGlobal()
   local newLocal = global:toLocal(newCoordSys)
   return Point:new(newLocal, newCoordSys)
 end
+
+-----------========== POLYGONS =========================
+
+Polygon = {__class='Polygon'}
 
 function Polygon:new(p)
   local obj = {}
@@ -123,7 +139,7 @@ function Polygon.tostring(p)
   for _, v in ipairs(points) do
     s = s .. '(' .. fmt2(v[1]) .. ', ' .. fmt2(v[2]) .. ', ' .. fmt2(v[3]) .. '), '
   end
-  return s 
+  return s
 end
 
 function Polygon.square(p)
@@ -132,13 +148,10 @@ function Polygon.square(p)
   params.sides = 4
   params.radius = params.size * math.sqrt(2) / 2
   params.yrotation = params.yrotation or math.pi/4
-  return Polygon:new(params)   
+  return Polygon:new(params)
 end
 
-function Polygon:translate(v)
-end  
-
-function Polygon:rebase(coordSys) 
+function Polygon:rebase(coordSys)
   local obj = Polygon:new({sides=0})
   obj.points={}
   obj.coordSys = coordSys or CoordSys.global
