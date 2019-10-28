@@ -189,7 +189,7 @@ end
 -- ========= BAGS =============
 
 function emptyBag(bag)
-    local discardCount = #bag.getObjects()
+    local discardCount = bag.getQuantity()
     local d
     for i=1, discardCount do
         d = bag.takeObject({})
@@ -199,7 +199,7 @@ function emptyBag(bag)
 end
 
 function transferBags(source, destination, delay)
-    local discardCount = #source.getObjects()
+    local discardCount = source.getQuantity()
     local d
     for i=1, discardCount do
         if (delay==nil) or (delay==0) then
@@ -212,14 +212,6 @@ function transferBags(source, destination, delay)
                       end,
                  i*delay)
         end
-    end
-end
-function transferBagsSlow(source, destination)
-    local discardCount = #source.getObjects()
-    local d
-    for i=1, discardCount do
-        d = source.takeObject({})
-        Wait.time(function() destination.putObject(d) end, i*0.5)
     end
 end
 
