@@ -92,6 +92,10 @@ end
 
 function printPosition(pos, msg)
   if type(pos) == 'string' then print('Error: first argument to printPosition must be the position vector') end
+  if type(pos) == 'userdata' then
+      print('*')
+      local pos = pos.getPosition()
+  end
   assert(pos[1] and pos[2], 'Nil in printPosition' .. dump(pos))
   local str = (msg or '') .. '{' ..
       string.format('%.2f',pos[1] or 'nil') .. ', ' ..
@@ -180,4 +184,46 @@ function makePrintable(t, newToString)
   --assert(t.tostring, "printtable requires tostring object.tostring function")
   if t.tostring == nil then t.tostring = dump end
   mt.__tostring = t.tostring
+end
+
+-- ========= BAGS =============
+
+function emptyBag(bag)
+    local discardCount = #bag.getObjects()
+    local d
+    for i=1, discardCount do
+        d = bag.takeObject({})
+        d.destruct()
+        --tilePool.putObject(d)
+    end
+end
+
+function transferBags(source, destination, delay)
+    local discardCount = #source.getObjects()
+    local d
+    for i=1, discardCount do
+        if (delay==nil) or (delay==0) then
+            d = source.takeObject({})
+            destination.putObject(d)
+        else
+            Wait.time(function()
+                        d = source.takeObject({})
+                        destination.putObject(d)
+                      end,
+                 i*delay)
+        end
+    end
+end
+function transferBagsSlow(source, destination)
+    local discardCount = #source.getObjects()
+    local d
+    for i=1, discardCount do
+        d = source.takeObject({})
+        Wait.time(function() destination.putObject(d) end, i*0.5)
+    end
+end
+
+function countItemsInBag(bag)
+    --return #bag.getObjects()
+    return bag.getQuantity()
 end
