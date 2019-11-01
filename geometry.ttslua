@@ -161,3 +161,73 @@ function Polygon:rebase(coordSys)
   end
   return obj
 end
+
+---------============= GRIDS ===============
+-- Grids are 1-3D evenly-spaced arrays of points.
+-- For example, create a 2D array based at (3,4,5) with 5 columns and 4 rows:
+-- g1 = Grid:new({origin=Vector(3,4,5), rows=4, cols=5, spacing=(2.5,0,2.8)})
+-- This will give row/column positions based on those parameters with row[1], column[1]
+--   being at the origin, row[2],column[2] being one spacing unit (vector) away, and so on.
+-- Then Grid:posToRowCol(pos) will return a 3D table for row, column, layer
+--      Grid:rowColToPos(row, col, layer) does the opposite, returning a position from the row/col/layer
+-- Currently, plain Vectors are used and not Point class variables, which include the CoordSys.
+--
+Grid = {__class='Grid'}
+
+
+function Grid:new(p)
+  -- currently supports only 1 layer (i.e. is 2D, rows and columns), ignores layer parameter
+  local obj = {spacing = Vector(2,2,2), origin=Vector(0,0,0), coordSys=CoordSys.global, rows=1, cols=1, layers=1}
+  setmetatable(obj, self)
+  self.__index = self
+  self.__tostring = self.tostring
+  for k, v in pairs(copyTable(p)) do
+    obj[k] = v
+  end
+  obj.rowZs = {}
+  obj.colXs = {}
+  obj.layerYs = {}
+  for i = 0, obj.rows-1 do
+    table.insert(obj.rowZs, obj.origin.z + obj.spacing.z*i)
+  end
+  for i = 0, obj.cols-1 do
+    table.insert(obj.colXs, obj.origin.x + obj.spacing.x*i)
+  end
+  for i = 0, obj.layers-1 do
+    table.insert(obj.layerYs, obj.origin.y + obj.spacing.y*i)
+  end
+  return obj
+end
+
+function Grid:generatePoints() -- NB: not really needed for anything
+  self.points = {}
+  for layer= 1, self.layers do
+    local layerPoints = {}
+    for r = 1, self.rows do
+      local rowPoints = {}
+      for c = 1, self.cols do
+        table.insert(rowPoints, Vector(self.colXs[c], self.layerYs[layer], self.rowZs[r]))
+        -- one column in this row
+      end
+      table.insert(layerPoints, rowPoints) -- one row in this layer
+    end
+    table.insert(self.points, layerPoints) -- this is a whole layer
+  end
+end
+
+function Grid:posToRowCol(pos)
+  local offset = pos - self.origin + self.spacing*0.5
+  local col = math.floor(offset.x/self.spacing.x) + 1
+  local row = math.floor(offset.z/self.spacing.z) + 1
+  local layer = math.floor(offset.y/self.spacing.y) + 1
+  if row>self.rows or col>self.cols or row<1 or col<1
+    or layer>self.layers or layer<1 then return nil end
+  return {row, col, layer}
+end
+
+function Grid:rowColToPos(row, col, layer)
+  local layer = layer or 1
+  if row>self.rows or col>self.cols or row<1 or col<1
+    or layer>self.layers or layer<1 then return nil end
+  return Vector(self.colXs[col], self.layerYs[layer], self.rowZs[row])
+end

@@ -41,6 +41,15 @@ function FollowerGroup:update()
   end
 end
 
+function FollowerGroup.removeFromAllFollowerGroups(target)
+    for i, fg in ipairs(AllFollowerGroups) do
+        if fg.target == target then
+            return table.remove(AllFollowerGroups, i)
+        end
+    end
+    return nil
+end
+
 function updateAllFollowerGroups()
   if AllFollowerGroups then
     for _, fg in ipairs (AllFollowerGroups) do

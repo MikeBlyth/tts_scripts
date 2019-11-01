@@ -74,6 +74,24 @@ function mergeTables(params, newParams)
     return t
 end
 
+
+------------ filter Table
+function filterTable(t,filterFunction) -- return subset of elements for which filterFunction returns true
+  assert (filterFunction, 'filter function required in filterTable')
+  local result = {}
+  for k,v in pairs(t) do
+    if filterFunction(k,v) then
+      if type(k)=='number' then
+        table.insert(result,v)
+      else
+        result[k] = v
+      end
+    end
+  end
+  return result
+end
+
+
 function arrayRemove(array, value)  --  DOESN'T WORK WITH ASSOCIATIVE TABLES! (Just use array.value = nil)
     local newArray = {}
     for i, v in ipairs(array) do
@@ -146,6 +164,25 @@ function printMessage(player, msg, params)
     playerMessageButton(player, msg, params)
 end
 printMsg = printMessage
+
+--------- READ ONLY TABLES ============
+
+function readOnly (t)
+  --from PIL 13:4 -- returns proxy for t which is read-only
+  -- notes: this only works on the table itself, not on subtables
+  --        this breaks iterators so pairs, ipairs, and dump won't work, you have to know
+  --        which fields the table contains.
+  local proxy = {}
+  local mt = {       -- create metatable
+    __index = t,
+    __newindex = function (t,k,v)
+      error("attempt to update a read-only table", 2)
+    end
+  }
+  setmetatable(proxy, mt)
+  return proxy
+end
+
 
 ----------======== VECTORS ========-------------
 
