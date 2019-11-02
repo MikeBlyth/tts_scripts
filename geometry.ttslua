@@ -174,15 +174,15 @@ end
 --
 Grid = {__class='Grid'}
 
-
 function Grid:new(p)
-  -- currently supports only 1 layer (i.e. is 2D, rows and columns), ignores layer parameter
   local obj = {spacing = Vector(2,2,2), origin=Vector(0,0,0), coordSys=CoordSys.global, rows=1, cols=1, layers=1}
   setmetatable(obj, self)
   self.__index = self
   self.__tostring = self.tostring
-  for k, v in pairs(copyTable(p)) do
-    obj[k] = v
+  if p then
+    for k, v in pairs(copyTable(p)) do
+      obj[k] = v
+    end
   end
   obj.rowZs = {}
   obj.colXs = {}
@@ -199,7 +199,8 @@ function Grid:new(p)
   return obj
 end
 
-function Grid:generatePoints() -- NB: not really needed for anything
+function Grid:generatePoints() -- not really needed for anything since accessing the points is
+  -- no easier than just using rowColToPos(row,col,layer)
   self.points = {}
   for layer= 1, self.layers do
     local layerPoints = {}
@@ -213,15 +214,37 @@ function Grid:generatePoints() -- NB: not really needed for anything
     end
     table.insert(self.points, layerPoints) -- this is a whole layer
   end
+  return self.points
 end
 
-function Grid:posToRowCol(pos)
+function Grid:generatePointsFlat() -- just a flat array of all the points in the grid
+  self.pointsFlat = {}
+  for layer= 1, self.layers do
+    for r = 1, self.rows do
+      for c = 1, self.cols do
+        table.insert(self.pointsFlat, Vector(self.colXs[c], self.layerYs[layer], self.rowZs[r]))
+      end
+    end
+  end
+  return self.pointsFlat
+end
+
+function Grid:posToRowCol(position, strict) -- strict defaults to true, returns nil if out of bounds
+  pos = position
+  if not pos.__isVector then
+    assert(type(pos)=='table', 'posToRowCol requires vector or table convertable to vector')
+    pos = Vector(position)
+  end
   local offset = pos - self.origin + self.spacing*0.5
   local col = math.floor(offset.x/self.spacing.x) + 1
   local row = math.floor(offset.z/self.spacing.z) + 1
   local layer = math.floor(offset.y/self.spacing.y) + 1
-  if row>self.rows or col>self.cols or row<1 or col<1
-    or layer>self.layers or layer<1 then return nil end
+  if strict==nil then strict=true end  -- makes strict-true the default
+  if strict then
+    if row>self.rows or col>self.cols or row<1 or col<1
+      or layer>self.layers or layer<1 then return nil end
+    if self.triangle and col>row then return nil end -- outside bounds of triangle where for given row, cols = [1..row]
+  end
   return {row, col, layer}
 end
 
@@ -230,4 +253,41 @@ function Grid:rowColToPos(row, col, layer)
   if row>self.rows or col>self.cols or row<1 or col<1
     or layer>self.layers or layer<1 then return nil end
   return Vector(self.colXs[col], self.layerYs[layer], self.rowZs[row])
+end
+
+TriangularGrid = Grid:new({__class='TriangularGrid'})
+
+function TriangularGrid:new(p)
+  if p then
+    assert(p.rows==nil or p.cols==nil or p.rows==p.cols,
+      'Cannot specify different rows and columns in triangle--use one or the other.')
+  end
+  local params = copyTable(p)
+  params.cols = p.cols or p.rows
+  params.rows = p.rows or p.cols
+  local obj = Grid:new(params)
+  setmetatable(obj, self)
+  self.__index = self
+  self.__tostring = self.tostring
+  self.triangle = true
+  return obj
+end
+
+function TriangularGrid:generatePointsFlat()
+-- This one will make points in this pattern:
+-- xxx
+-- xx
+-- x
+-- which should be OK for any required configuration if started from the right corner
+  local colsInRow = 0
+  self.pointsFlat = {}
+  for layer=1, self.layers do
+    for r=1, self.rows do
+      colsInRow = colsInRow + 1
+      for c = 1, colsInRow do
+        table.insert(self.pointsFlat, Vector(self.colXs[c], self.layerYs[layer], self.rowZs[r]))
+      end
+    end
+  end
+  return self.pointsFlat
 end
