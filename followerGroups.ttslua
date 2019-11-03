@@ -1,53 +1,52 @@
 FollowerGroup = {}
-AllFollowerGroups = {}
+AllFollowerGroups = {objects={}}
+
+function AllFollowerGroups.contains(object)
+  return AllFollowerGroups.objects[object] ~= nil
+end
 
 function FollowerGroup:new(p)
 -- {target=Obj, followers={obj1, obj2...}, spacing=Vector}
 -- objects will be spaced at the "spacing" interval from the target
 -- (target fields of Followers are somewhat redundant within a group, since the whole group will have same target object)
-  defaults = {spacing = Vector(2,0,0)}
+  local defaults = {spacing = Vector(2,0,0)}
   local params = mergeTables(defaults, p)
-  local obj = {}
   local target = params.target
+  local followers = params.followers
+  local spacing = params.spacing
+  local obj = {}
   setmetatable(obj, self)
   self.__index = self
   self.__tostring = self.tostring
-  print(type(target), ' ', target.getPosition())
-  assert(type(target)=='userdata' and target.getPosition(), "FollowerGroup:new requires real target")
+  assert(type(target)=='userdata' and target:getPosition(),
+    "FollowerGroup:new requires real target")
   obj.target = target
-  obj.spacing = params.spacing
+  AllFollowerGroups.objects[target]='t'  -- flag this object as a FG target/leader
+  obj.spacing = spacing
   obj.followers = {}
-  if params.followers then obj:add(params.followers) end
+  if followers then obj:add(followers) end
   table.insert(AllFollowerGroups, obj)
   return obj
 end
 
 function FollowerGroup:add(objects)
   -- allow arg to be either singular object or an array
-  if objects.getPosition then
-	newobjects = {objects}  -- means it's a single object, not an array
-  else
-	newobjects = objects
+  if objects.getPosition then newobjects = {objects}  -- means it's a single object, not an array
+  else newobjects = objects
   end
   for _, obj in ipairs(newobjects) do
-    table.insert(self.followers, {object=obj})
+    if not AllFollowerGroups.contains(obj) then  -- don't add i
+      table.insert(self.followers, {object=obj})
+      AllFollowerGroups.objects[obj]='f'  -- flag as FG follower
+    end
   end
 end
 
 function FollowerGroup:update()
-  for i,f in ipairs(self.followers) do
-    f.object.setPosition(self.target.getPosition()+self.spacing*(i))
-    f.object.setRotation(self.target.getRotation())
+  for i,o in ipairs(self.followers) do
+    o.object:setPosition(self.target:getPosition()+self.spacing*(i))
+    o.object:setRotation(self.target:getRotation())
   end
-end
-
-function FollowerGroup.removeFromAllFollowerGroups(target)
-    for i, fg in ipairs(AllFollowerGroups) do
-        if fg.target == target then
-            return table.remove(AllFollowerGroups, i)
-        end
-    end
-    return nil
 end
 
 function updateAllFollowerGroups()
@@ -56,6 +55,32 @@ function updateAllFollowerGroups()
       fg:update()
     end
   end
+end
+
+function FollowerGroup.removeFromAllFollowerGroups(target)  -- remove the FG that has target=target
+  -- removes the matching FG from All... and also destroys that matching FG
+    for i, fg in ipairs(AllFollowerGroups) do
+        if fg.target == target then   -- this is the fg to remove
+            local removed = table.remove(AllFollowerGroups, i)
+            AllFollowerGroups.objects[removed.target] = nil
+            for _,f in ipairs(removed.followers) do
+              AllFollowerGroups.objects[f.object] = nil
+            end
+            fg = nil -- destroy the FG itself
+            return true
+        end
+    end
+    return nil
+end
+
+function FollowerGroup.tostring(fg)  -- NB Replace :getGUID with .getGUID in production
+  s = 'FollowerGroup: leader='
+  s = s .. fg.target:getGUID() .. '; followers={'
+  for _, f in ipairs(fg.followers) do
+    s = s .. f.object:getGUID() .. ', '
+  end
+  s = s .. '}'
+  return s
 end
 
 --- to make it work, just add 'updateAllFollowerGroups()' to main (global) onUpdate()
