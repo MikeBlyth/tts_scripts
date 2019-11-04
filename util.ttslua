@@ -256,3 +256,17 @@ function countItemsInBag(bag)
     --return #bag.getObjects()
     return bag.getQuantity()
 end
+
+function raise(object,dy)
+    local p = object.getPosition()
+    p.y = p.y + dy
+    object.setPosition(p)
+end
+
+function lock(object)
+    object.setLock(true)
+end
+
+function unlock(object)
+    object.setLock(false)
+end

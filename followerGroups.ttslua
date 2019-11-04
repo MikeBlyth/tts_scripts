@@ -2,8 +2,19 @@ FollowerGroup = {}
 AllFollowerGroups = {objects={}}
 
 function AllFollowerGroups.contains(object)
-  return AllFollowerGroups.objects[object] ~= nil
+  if type(object) == 'string' then -- handle a GUID
+    return AllFollowerGroups.objects[object]
+  end
+  return AllFollowerGroups.objects[object:getGUID()]
 end
+
+function AllFollowerGroups.tostring(afo)
+    s = 'AFG={'
+    for _, fg in ipairs(afg) do s = s .. FollowerGroup.tostring(fg) .. '\n' end
+    return s .. '}'
+end
+makePrintable(AllFollowerGroups)
+afg = AllFollowerGroups
 
 function FollowerGroup:new(p)
 -- {target=Obj, followers={obj1, obj2...}, spacing=Vector}
@@ -26,6 +37,7 @@ function FollowerGroup:new(p)
   obj.followers = {}
   if followers then obj:add(followers) end
   table.insert(AllFollowerGroups, obj)
+  --target.auto_raise = false
   return obj
 end
 
@@ -36,16 +48,19 @@ function FollowerGroup:add(objects)
   end
   for _, obj in ipairs(newobjects) do
     if not AllFollowerGroups.contains(obj) then  -- don't add i
-      table.insert(self.followers, {object=obj})
-      AllFollowerGroups.objects[obj]='f'  -- flag as FG follower
+        obj.setLock(true)  -- have to do this to keep stable
+        table.insert(self.followers, {object=obj})
+        AllFollowerGroups.objects[obj]='f'  -- flag as FG follower
     end
   end
 end
 
 function FollowerGroup:update()
   for i,o in ipairs(self.followers) do
-    o.object:setPosition(self.target:getPosition()+self.spacing*(i))
-    o.object:setRotation(self.target:getRotation())
+    o.object.setPosition(self.target.getPosition()+self.spacing*(i))
+    --printPosition(self.target.getPosition())
+    o.object.setRotation(self.target.getRotation())
+    o.object.setVelocity(self.target.getVelocity())
   end
 end
 
@@ -64,7 +79,8 @@ function FollowerGroup.removeFromAllFollowerGroups(target)  -- remove the FG tha
             local removed = table.remove(AllFollowerGroups, i)
             AllFollowerGroups.objects[removed.target] = nil
             for _,f in ipairs(removed.followers) do
-              AllFollowerGroups.objects[f.object] = nil
+                f.object.setLock(false)
+                AllFollowerGroups.objects[f.object] = nil
             end
             fg = nil -- destroy the FG itself
             return true
