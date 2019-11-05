@@ -41,6 +41,8 @@ function firstWord(s)
     return string.match(s, ('%a+'))
 end
 
+-------=========== TABLE FUNCTIONS ======================
+
 function arrayContains(array, value)  -- check if array contains value -- DOESN'T WORK WITH ASSOCIATIVE TABLES!
     for i, v in ipairs(array) do
         if v == value then return i end
@@ -256,6 +258,22 @@ function countItemsInBag(bag)
     --return #bag.getObjects()
     return bag.getQuantity()
 end
+
+----------STUFF With OBJECTS
+
+function toGUID(x) -- takes either object or GUID, returns GUID
+  if x.getGUID then return x:getGUID() end  -- change : !
+  if type(x)=='string' then return(x) end
+  error('toGUID argument must be an object or a string GUID',2)
+end
+
+function toObject(x) -- takes either object or GUID, returns object
+  if x == nil then error('No argument or nil argument supplied to toObject(x)') end
+  if type(x)=='string' then return getObjectFromGUID(x) end
+  if x.getGUID then return x end
+  error('toObject argument must be an object or a string GUID')
+end
+ 
 
 function raise(object,dy)
     local p = object.getPosition()

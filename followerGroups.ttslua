@@ -2,19 +2,23 @@ FollowerGroup = {}
 AllFollowerGroups = {objects={}}
 
 function AllFollowerGroups.contains(object)
-  if type(object) == 'string' then -- handle a GUID
-    return AllFollowerGroups.objects[object]
-  end
-  return AllFollowerGroups.objects[object:getGUID()]
+  guid = toGUID(object) -- takes either a GUID or an object
+   return AllFollowerGroups.objects[guid]
 end
 
 function AllFollowerGroups.tostring(afo)
-    s = 'AFG={'
+    s = ''
     for _, fg in ipairs(afg) do s = s .. FollowerGroup.tostring(fg) .. '\n' end
-    return s .. '}'
+    return s
 end
 makePrintable(AllFollowerGroups)
 afg = AllFollowerGroups
+
+function AllFollowerGroups.empty()
+    for i,_ in ipairs(AllFollowerGroups) do
+        AllFollowerGroups[i] = nil
+    end
+end
 
 function FollowerGroup:new(p)
 -- {target=Obj, followers={obj1, obj2...}, spacing=Vector}
@@ -29,39 +33,53 @@ function FollowerGroup:new(p)
   setmetatable(obj, self)
   self.__index = self
   self.__tostring = self.tostring
-  assert(type(target)=='userdata' and target:getPosition(),
+  assert(target.getPosition,
     "FollowerGroup:new requires real target")
-  obj.target = target
-  AllFollowerGroups.objects[target]='t'  -- flag this object as a FG target/leader
-  obj.spacing = spacing
+  obj.target = target.getGUID()
+  AllFollowerGroups.objects[target.getGUID()]='t'  -- flag this object as a FG target/leader
+  obj.spacing = Vector(spacing)
   obj.followers = {}
+  -- target.auto_raise = false  -- doesn't seem to help
   if followers then obj:add(followers) end
   table.insert(AllFollowerGroups, obj)
-  --target.auto_raise = false
   return obj
 end
 
 function FollowerGroup:add(objects)
   -- allow arg to be either singular object or an array
-  if objects.getPosition then newobjects = {objects}  -- means it's a single object, not an array
+  if objects.getGUID then newobjects = {objects}  -- means it's a single object, not an array
   else newobjects = objects
   end
   for _, obj in ipairs(newobjects) do
-    if not AllFollowerGroups.contains(obj) then  -- don't add i
-        obj.setLock(true)  -- have to do this to keep stable
-        table.insert(self.followers, {object=obj})
-        AllFollowerGroups.objects[obj]='f'  -- flag as FG follower
+    local guid = obj.getGUID()
+    if not AllFollowerGroups.contains(guid) then  -- don't add i
+      obj.setLock(true)  -- have to do this to keep stable
+      --obj.auto_raise = false  -- doesn't seem to help
+      table.insert(self.followers, guid)
+      AllFollowerGroups.objects[guid]='f'  -- flag as FG follower
     end
   end
 end
 
 function FollowerGroup:update()
-  for i,o in ipairs(self.followers) do
-    o.object.setPosition(self.target.getPosition()+self.spacing*(i))
-    --printPosition(self.target.getPosition())
-    o.object.setRotation(self.target.getRotation())
-    o.object.setVelocity(self.target.getVelocity())
+  local obj
+  local target = getObjectFromGUID(self.target)
+  if target == nil then self.followers = {} end  -- essentially nils a leaderless group
+  for i,guid in ipairs(self.followers) do
+    obj = getObjectFromGUID(guid)
+    if obj then -- some edge cases may have lost obj in a bag or whatever
+        local fudgeV = target.getVelocity()
+        local fudge = fudgeV:magnitude()/20
+        local vy = target.getVelocity().y
+        if math.abs(vy) > 50 then print('!', vy, ':', fudgeV, ':', fudge) end
+        local pos = target.getPosition()+self.spacing*(i+fudge)
+
+        obj.setPosition(target.getPosition()+self.spacing*(i))
+        obj.setRotation(target.getRotation())
+        obj.setVelocity(target.getVelocity())
+    end
   end
+  return true
 end
 
 function updateAllFollowerGroups()
@@ -72,15 +90,16 @@ function updateAllFollowerGroups()
   end
 end
 
-function FollowerGroup.removeFromAllFollowerGroups(target)  -- remove the FG that has target=target
+function FollowerGroup.removeFromAllFollowerGroups(target)  -- remove the FG with target (object or GUID accepted)
   -- removes the matching FG from All... and also destroys that matching FG
+    local guid = toGUID(target)
     for i, fg in ipairs(AllFollowerGroups) do
-        if fg.target == target then   -- this is the fg to remove
+        if fg.target == guid then   -- this is the fg to remove
             local removed = table.remove(AllFollowerGroups, i)
-            AllFollowerGroups.objects[removed.target] = nil
+            AllFollowerGroups.objects[guid] = nil
             for _,f in ipairs(removed.followers) do
-                f.object.setLock(false)
-                AllFollowerGroups.objects[f.object] = nil
+              getObjectFromGUID(f).setLock(false)
+              AllFollowerGroups.objects[f] = nil -- f.object is follower object itself
             end
             fg = nil -- destroy the FG itself
             return true
@@ -89,16 +108,12 @@ function FollowerGroup.removeFromAllFollowerGroups(target)  -- remove the FG tha
     return nil
 end
 
-function FollowerGroup.tostring(fg)  -- NB Replace :getGUID with .getGUID in production
+function FollowerGroup.tostring(fg)
   s = 'FollowerGroup: leader='
-  s = s .. fg.target:getGUID() .. '; followers={'
+  s = s .. fg.target .. '; followers={'
   for _, f in ipairs(fg.followers) do
-    s = s .. f.object:getGUID() .. ', '
+    s = s .. f .. ', '
   end
   s = s .. '}'
   return s
 end
-
---- to make it work, just add 'updateAllFollowerGroups()' to main (global) onUpdate()
-
--- to stop the FollowerGroup from working, just set it to nil
