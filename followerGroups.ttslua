@@ -68,13 +68,12 @@ function FollowerGroup:update()
   for i,guid in ipairs(self.followers) do
     obj = getObjectFromGUID(guid)
     if obj then -- some edge cases may have lost obj in a bag or whatever
-        local fudgeV = target.getVelocity()
-        local fudge = fudgeV:magnitude()/20
-        local vy = target.getVelocity().y
-        if math.abs(vy) > 50 then print('!', vy, ':', fudgeV, ':', fudge) end
-        local pos = target.getPosition()+self.spacing*(i+fudge)
-
-        obj.setPosition(target.getPosition()+self.spacing*(i))
+        -- local fudgeV = target.getVelocity()
+        -- local fudge = fudgeV:magnitude()/80
+        --local vy = target.getVelocity().y
+        --if math.abs(vy) > 50 then print('!', vy) end
+        local newPos = target.getPosition()+self.spacing*(i)
+        obj.setPosition(newPos)
         obj.setRotation(target.getRotation())
         obj.setVelocity(target.getVelocity())
     end
