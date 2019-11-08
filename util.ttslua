@@ -256,6 +256,7 @@ end
 
 function countItemsInBag(bag)
     --return #bag.getObjects()
+    if bag == nil then return 0 end
     return bag.getQuantity()
 end
 
@@ -273,7 +274,7 @@ function toObject(x) -- takes either object or GUID, returns object
   if x.getGUID then return x end
   error('toObject argument must be an object or a string GUID')
 end
- 
+
 
 function raise(object,dy)
     local p = object.getPosition()
