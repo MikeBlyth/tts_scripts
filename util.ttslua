@@ -37,9 +37,22 @@ function tableIsArray(t) -- quick check, see if indices are sequential
   return true
 end
 
+----------- STRINGS ======================================
+
 function firstWord(s)
     return string.match(s, ('%a+'))
 end
+
+
+function split(str, delim) -- split a string on delim
+  assert(#delim==1, "Delimiter in this split function must have length of 1 char")
+  local results = {}
+  for elem in string.gmatch(str, "[^" .. delim.. "]+") do
+    table.insert(results, elem)
+  end
+  return results
+end
+
 
 -------=========== TABLE FUNCTIONS ======================
 
@@ -103,6 +116,16 @@ function arrayRemove(array, value)  --  DOESN'T WORK WITH ASSOCIATIVE TABLES! (J
     end
     return newArray
 end
+
+function map(func, array)
+  local new_array = {}
+  for i,v in ipairs(array) do
+    new_array[i] = func(v)
+  end
+  return new_array
+end
+
+----------- PRINTING FOR DEBUG
 
 function printGUIDPosition(guid, msg)
     local pos = getObjectFromGUID(guid).getPosition()
